@@ -12,8 +12,7 @@ y=tk.BooleanVar()
 def pulsator():
     global x   
     a=0
-    file_path=r"C:\Users\user\Documents\UI\hello_world\sdkconfig"
-    with open(file_path,'r')as file:
+    with open("C:/Users/user/Documents/UI/hello_world/sdkconfig",'r')as file:
         lines=file.readlines()
     for line in lines:
      if line.strip()=="CONFIG_DEVICE_PULSATOR=y":
