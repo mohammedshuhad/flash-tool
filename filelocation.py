@@ -1,12 +1,13 @@
 import tkinter as tk
-from tkinter import filedialog,ttk
+from tkinter import filedialog,ttk,messagebox
 import sv_ttk
 import subprocess
-import os
+import os,shutil,json
 python_env=""
 idf_py=""
 path=""
 config_path=""
+esp_export=""
 root = tk.Tk()
 x=tk.BooleanVar()
 y=tk.BooleanVar()
@@ -36,7 +37,7 @@ def chant():
          a+=1
     if a==1:
         x.set(False)
-        y.set(True)   
+        y.set(True) 
     else:
         y.set(False)
 def wifi():
@@ -61,7 +62,7 @@ def menu():
                entry3.insert(0,menupassword)
 def select_esp_file():
     esp_path=filedialog.askdirectory(title="Select IDF Path")
-    global python_env, idf_py,label,frame1
+    global python_env, idf_py,esp_export,label,frame1
     python_env = os.path.join(esp_path, "python_env", "idf5.4_py3.11_env", "Scripts", "python.exe")
     idf_py = os.path.join(esp_path,"frameworks","esp-idf-v5.4.1","tools", "idf.py")
     label.config(text=""+esp_path,font=("Courier",13,"underline"))
@@ -80,9 +81,24 @@ def open_file():
     menu()
     label1.config(text=""+path,font=("Courier",10,"underline"))
 def flash():
-    subprocess.run([python_env, idf_py,"build"], cwd=path)
-    subprocess.run([python_env, idf_py,"flash"], cwd=path)
-    subprocess.run([python_env, idf_py,"monitor"], cwd=path)
+    for name in ["chant.json", "pulsator.json"]:
+        file_path = os.path.join(path, "main", name)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    json_path=os.path.join(path,"main","pulsator.json" if x.get() else "chant.json")        
+    shutil.copyfile(os.path.join(path,"main","copy.json"),json_path)
+    # if not esp_export or not idf_py or not path:
+    #     messagebox.showerror("Missing Paths", "Please select the ESP-IDF path and open the project folder before flashing.")
+    #     return
+    # elif x.get()==0 and y.get()==0:
+    #     messagebox.showerror("Choose chant or pulsator")
+    #     return
+    # elif not json_path:
+    #     messagebox.showerror("Choose Valid Json File")
+    # else:    
+    script_path=os.path.normpath(os.path.join(path,"main","script.py"))   
+    abcd=os.path.join(path,"main")
+    subprocess.run(["python",script_path],cwd=abcd)    
 def change_pulsator():
     global x
     y.set(False)
@@ -96,7 +112,7 @@ def change_pulsator():
                 else:
                     updated_lines.append(line)    
         with open(config_path, 'w') as file:    
-            file.writelines(updated_lines)         
+            file.writelines(updated_lines)     
 def change_chant():
     global y
     x.set(False)
@@ -146,7 +162,7 @@ def change_password():
             pass
         return
     else:      
-      label2 = ttk.Label(root, text="Enter SSID Name", font=("Courier", 10,))
+      label2 = ttk.Label(root, text="Enter SSID Name", font=("Courier", 10 ,))
       label2.pack(side="top", anchor="w", padx=10, pady=(10, 0))
       entry = ttk.Entry(root)      
       label3 = ttk.Label(root, text="Enter Password", font=("Courier", 10,))
@@ -202,11 +218,21 @@ def menu_config(event=None):
                     updated_lines.append(line)   
         with open(config_path,'w')as file:
             file.writelines(updated_lines)    
+def jsonsearch():
+    base_json_path=filedialog.askopenfilename(
+        title="Open JSON FILE",
+        filetypes=[("JSON Files","*json")]
+    )
+    json_path=os.path.join(path,"main","copy.json")
+    shutil.copy(base_json_path,json_path)
+    label5.config(text="Copied from:"+base_json_path,font=("Courier",10,"underline"))    
 root.geometry("1000x1000")
 frame1 = tk.Frame(root)
 frame1.pack(anchor="w", pady=5, padx=10)
 frame2 = tk.Frame(root)
 frame2.pack(anchor="w", pady=15, padx=10)
+frame4=tk.Frame(root)
+frame4.pack(anchor="w", pady=15, padx=10)
 button1 = ttk.Button(frame1,text="Select Esp_Path",command=select_esp_file)
 button1.pack(side="left")
 button = ttk.Button(frame2, text="Open ESP-IDF Project", command=open_file)
@@ -239,5 +265,9 @@ def global_click(event):
 entry3.bind("<FocusIn>", on_entry_focus_in)
 entry3.bind("<FocusOut>", on_entry_focus_out)
 root.bind("<Button-1>", global_click)
+button5=ttk.Button(frame4,text="Select JSON File",command=jsonsearch)
+button5.pack(side="top",anchor="w",pady=15,padx=10)
+label5=ttk.Label(frame4,text="")
+label5.pack(side="left",padx=10)
 sv_ttk.set_theme("dark")
 root.mainloop()
