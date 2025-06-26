@@ -2,12 +2,11 @@ import tkinter as tk
 from tkinter import filedialog,ttk,messagebox
 import sv_ttk
 import subprocess
-import os,shutil,json
-python_env=""
-idf_py=""
+import os,shutil
 path=""
 config_path=""
-esp_export=""
+base_json_path=""
+esp_path=""
 root = tk.Tk()
 x=tk.BooleanVar()
 y=tk.BooleanVar()
@@ -61,10 +60,8 @@ def menu():
                menupassword=int(line.split("=")[1])
                entry3.insert(0,menupassword)
 def select_esp_file():
+    global esp_path
     esp_path=filedialog.askdirectory(title="Select IDF Path")
-    global python_env, idf_py,esp_export,label,frame1
-    python_env = os.path.join(esp_path, "python_env", "idf5.4_py3.11_env", "Scripts", "python.exe")
-    idf_py = os.path.join(esp_path,"frameworks","esp-idf-v5.4.1","tools", "idf.py")
     label.config(text=""+esp_path,font=("Courier",13,"underline"))
 def enable_checkbutton():
     global checkbutton1,checkbutton2,checkbutton3
@@ -81,24 +78,25 @@ def open_file():
     menu()
     label1.config(text=""+path,font=("Courier",10,"underline"))
 def flash():
-    for name in ["chant.json", "pulsator.json"]:
-        file_path = os.path.join(path, "main", name)
-        if os.path.exists(file_path):
-            os.remove(file_path)
-    json_path=os.path.join(path,"main","pulsator.json" if x.get() else "chant.json")        
-    shutil.copyfile(os.path.join(path,"main","copy.json"),json_path)
-    # if not esp_export or not idf_py or not path:
-    #     messagebox.showerror("Missing Paths", "Please select the ESP-IDF path and open the project folder before flashing.")
-    #     return
-    # elif x.get()==0 and y.get()==0:
-    #     messagebox.showerror("Choose chant or pulsator")
-    #     return
-    # elif not json_path:
-    #     messagebox.showerror("Choose Valid Json File")
-    # else:    
-    script_path=os.path.normpath(os.path.join(path,"main","script.py"))   
-    abcd=os.path.join(path,"main")
-    subprocess.run(["python",script_path],cwd=abcd)    
+    json_path=os.path.join(path,"main\\utility\\json","pulsator.json" if x.get() else "chant.json")
+    print(base_json_path)
+    print(json_path)
+    shutil.copyfile(base_json_path, json_path)         
+    script_path=os.path.normpath(os.path.join(path,"main\\utility\\json","script.py"))   
+    abcd=os.path.join(path,"main\\utility\\json")
+    subprocess.run(["python",script_path],cwd=abcd)
+    
+    # Run export command in ESP-IDF path, then change to project directory and flash
+    export_script = os.path.join(esp_path, "export") 
+    command = f'"{export_script}" && cd /d "{path}" && idf.py flash'
+    
+    try:
+        subprocess.run(command, shell=True, check=True)
+        print("Flash and monitor completed successfully!")
+    except subprocess.CalledProcessError as e:
+        print(f"Flash command failed with return code: {e.returncode}")
+    except Exception as e:
+        print(f"An error occurred: {e}") 
 def change_pulsator():
     global x
     y.set(False)
@@ -219,13 +217,13 @@ def menu_config(event=None):
         with open(config_path,'w')as file:
             file.writelines(updated_lines)    
 def jsonsearch():
+    global base_json_path
     base_json_path=filedialog.askopenfilename(
         title="Open JSON FILE",
         filetypes=[("JSON Files","*json")]
     )
-    json_path=os.path.join(path,"main","copy.json")
-    shutil.copy(base_json_path,json_path)
-    label5.config(text="Copied from:"+base_json_path,font=("Courier",10,"underline"))    
+    label5.config(text=base_json_path,font=("Courier",10,"underline"))
+      
 root.geometry("1000x1000")
 frame1 = tk.Frame(root)
 frame1.pack(anchor="w", pady=5, padx=10)
