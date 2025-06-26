@@ -85,11 +85,8 @@ def flash():
     script_path=os.path.normpath(os.path.join(path,"main\\utility\\json","script.py"))   
     abcd=os.path.join(path,"main\\utility\\json")
     subprocess.run(["python",script_path],cwd=abcd)
-    
-    # Run export command in ESP-IDF path, then change to project directory and flash
     export_script = os.path.join(esp_path, "export") 
     command = f'"{export_script}" && cd /d "{path}" && idf.py flash'
-    
     try:
         subprocess.run(command, shell=True, check=True)
         print("Flash and monitor completed successfully!")
@@ -176,8 +173,10 @@ def change_password():
       entry.pack(side="top", anchor="w", padx=10, pady=(0, 10)) 
       label3.pack(side="top", anchor="w", padx=10, pady=(10, 0))
       entry1.pack(side="top", anchor="w", padx=10, pady=(0, 10)) 
-      button4=ttk.Button(root,text="Connect",command=accept)
-      button4.pack(side="top", anchor="w", padx=10, pady=(10, 0))
+      entry1.bind("<FocusIn>", on_password_focus_in)
+      entry1.bind("<FocusOut>", on_password_focus_out)
+      entry.bind("<FocusIn>", on_ssid_focus_in)
+      entry.bind("<FocusOut>", on_ssid_focus_out)
 def accept():   
         name=entry.get()
         pas=entry1.get()
@@ -215,15 +214,32 @@ def menu_config(event=None):
                 else:
                     updated_lines.append(line)   
         with open(config_path,'w')as file:
-            file.writelines(updated_lines)    
+            file.writelines(updated_lines)   
+entry1_has_focus = [False]
+entry_has_focus = [False]
+def on_password_focus_in(event):
+    entry1_has_focus[0] = True
+def on_password_focus_out(event):
+    entry1_has_focus[0] = False
+    root.after(100, lambda: check_password_focus())
+def on_ssid_focus_in(event):
+    entry_has_focus[0] = True
+def check_ssid_focus():
+    if not entry_has_focus[0] and root.focus_get() != entry1:
+        accept()
+def on_ssid_focus_out(event):
+    entry_has_focus[0] = False
+    root.after(100, lambda: check_ssid_focus())
+def check_password_focus():
+    if not entry1_has_focus[0] and root.focus_get() != entry:
+        accept()
 def jsonsearch():
     global base_json_path
     base_json_path=filedialog.askopenfilename(
         title="Open JSON FILE",
         filetypes=[("JSON Files","*json")]
     )
-    label5.config(text=base_json_path,font=("Courier",10,"underline"))
-      
+    label5.config(text="Copied from:"+base_json_path,font=("Courier",10,"underline"))    
 root.geometry("1000x1000")
 frame1 = tk.Frame(root)
 frame1.pack(anchor="w", pady=5, padx=10)
@@ -258,8 +274,16 @@ def on_entry_focus_out(event):
     entry3_has_focus[0] = False
     root.after(100, menu_config)
 def global_click(event):
-    if event.widget != entry3 and entry3_has_focus[0]:
-        root.focus_set()
+    if entry3_has_focus[0] and event.widget != entry3:
+        dummy_focus_widget.focus_set()
+    if entry1_has_focus[0] and event.widget not in [entry, entry1]:
+        dummy_focus_widget.focus_set()
+        accept()
+    if entry_has_focus[0] and event.widget not in [entry, entry1]:
+        dummy_focus_widget.focus_set()
+        accept()
+dummy_focus_widget = ttk.Entry(root)
+dummy_focus_widget.place(x=-100, y=-100)   
 entry3.bind("<FocusIn>", on_entry_focus_in)
 entry3.bind("<FocusOut>", on_entry_focus_out)
 root.bind("<Button-1>", global_click)
