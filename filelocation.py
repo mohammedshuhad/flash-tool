@@ -298,14 +298,14 @@ Setting_menu_password_entryfield = ttk.Entry(settings_menu_frame)
 Setting_menu_password_entryfield .pack(side="left")
 Setting_menu_password_entryfield_has_focus = [False]
 def on_entry_focus_in(event):
-    Setting_menu_password_entryfield[0] = True
+    Setting_menu_password_entryfield_has_focus[0] = True
 def on_entry_focus_out(event):
-    Setting_menu_password_entryfield[0] = False
+    Setting_menu_password_entryfield_has_focus[0] = False
     root.after(100, menu_config)
-Setting_menu_password_entryfield .bind("<FocusIn>", on_entry_focus_in)
-Setting_menu_password_entryfield .bind("<FocusOut>", on_entry_focus_out)
+Setting_menu_password_entryfield.bind("<FocusIn>", on_entry_focus_in)
+Setting_menu_password_entryfield.bind("<FocusOut>", on_entry_focus_out)
 def global_click(event):
-    if Setting_menu_password_entryfield[0] and event.widget != Setting_menu_password_entryfield :
+    if Setting_menu_password_entryfield_has_focus[0] and event.widget != Setting_menu_password_entryfield :
         dummy_focus_widget.focus_set()
     if entry1_has_focus[0] and event.widget not in [ssid_entry_field, entry1]:
         dummy_focus_widget.focus_set()
